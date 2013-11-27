@@ -4,7 +4,9 @@
 
 ### Alignment Algorithm
 
-**To be written...**
+We plan to use a modified edit distance algorithm to find the optimal alignment score, using a table to hold alignment scores at given indeces of the input strings.  The table is then backtraced through to find the path of maximum scores, whose indeces are used to determine where an insertion, deletion, or substitution needs to occur.  The backtraced process is then used to construct the aligned string, which has insertions, deletions, and substitutions matching those from the backtrace.  
+
+To compute gap penalties and substitution penalties for substrings, the algorithm we use will track gap sizes and call functions defining penalties for given gaps and another function defining penalties for given character subtitutions.  
 
 ### Sorting Algorithm
 
