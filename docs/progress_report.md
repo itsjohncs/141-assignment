@@ -18,8 +18,19 @@ In order to divide the work we first seperated the assignment into discrete task
 
 The GitHub issue tracker is being used to keep track of these tasks.
 
-**Breakdown of who is doing what needed here.**
+Currently...
+
+**John Sullivan** is responsible for the command line interface, the database parsing module, the score matrix module, and coordinating the efforts of the group.
+
+**Jordan Meyer** is responsible for designing and implementing the scoring algorithm.
+
+**Kenneth Tapia** is responsible for creating the logic responsible for outputting the results.
+
+**Landon Yang** is currently familiarizing himself with Python and git so as to be productive in the future.
 
 ## What you have accomplished to date
 
-**Should be completed shortly before submission.**
+ * We have created discrete tasks from the specification.
+ * We have designed the algorithm.
+ * We have implemented the command line interface.
+ * We have made stubs for all the functions we believe we need.
