@@ -28,7 +28,7 @@ def load_database(database):
             break
 
         # Ensure that the format is what we expect
-        if description[0] != ">" or sequence[0] != ">":
+        if description[0] != ">":
             raise RuntimeError("Poorly formatted database file.")
 
-        yield Organism(description[1:], sequence[1:])
+        yield Organism(description[1:], sequence)

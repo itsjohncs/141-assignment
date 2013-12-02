@@ -6,9 +6,6 @@ from . import data
 from ..organism import Organism
 from .. import database
 
-# stdlib
-import os
-
 # external
 import pytest
 
