@@ -1,9 +1,12 @@
+# internal
+from .organism import Organism
+
 def load_database(database):
     """
     Returns a generator that provides `Organism` objects pulled from the
     database.
 
-    >>> db = load_database(StringIO.StringIO(">a\n>AGC\n>b\n>CGA\n"))
+    >>> db = load_database(StringIO.StringIO(">a\\n>AGC\\n>b\\n>CGA\\n"))
     >>> for i in db:
     ...     print i
     Organism(description = "a", sequence = "AGC")
@@ -15,4 +18,17 @@ def load_database(database):
 
     """
 
-    pass
+    line_number = 0
+    while True:
+        description = database.readline().strip()
+        sequence = database.readline().strip()
+
+        # Check if we've hit the end of the file
+        if description == "" and sequence == "":
+            break
+
+        # Ensure that the format is what we expect
+        if description[0] != ">" or sequence[0] != ">":
+            raise RuntimeError("Poorly formatted database file.")
+
+        yield Organism(description[1:], sequence[1:])

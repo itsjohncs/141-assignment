@@ -1,0 +1,4 @@
+>A dangerous foo.
+>AG
+>A benign bar.
+>GCA
