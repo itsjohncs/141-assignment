@@ -6,7 +6,7 @@ def load_database(database):
     Returns a generator that provides `Organism` objects pulled from the
     database.
 
-    >>> db = load_database(StringIO.StringIO(">a\\n>AGC\\n>b\\n>CGA\\n"))
+    >>> db = load_database(StringIO.StringIO(">a\\nAGC\\n>b\\nCGA\\n"))
     >>> for i in db:
     ...     print i
     Organism(description = "a", sequence = "AGC")
