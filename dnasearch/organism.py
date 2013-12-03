@@ -14,3 +14,13 @@ class Organism:
         self.description = description
         self.sequence = sequence
         self.score = score
+
+    def get_string(self):
+        return "Organism(description = %s, sequence = %s, score = %s)" % (
+            repr(self.description), repr(self.sequence), repr(self.score))
+
+    def __repr__(self):
+        return self.get_string()
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
