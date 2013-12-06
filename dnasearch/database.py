@@ -18,7 +18,6 @@ def load_database(database):
 
     """
 
-    line_number = 0
     while True:
         description = database.readline().strip()
         sequence = database.readline().strip()
