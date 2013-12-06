@@ -1,116 +1,159 @@
-"""
-Compares input strings, makes alignment strings,
-and uses scoring functions to calculate total similarity
-scores for the compared string. Returns similarity_score,
-a float total of scores of all characters in the compared string
-"""
-def score(query_str, other_str, sub_score, gap_score):
-    query_str = x = query_str.strip()
-    other_str = y = other_str.strip()
-    q = len(query_str)
-    o = len(other_str)
+def score(reference, query_str, sub_score, gap_score):
+    ref = reference.strip()
+    query = query_str.strip()
 
-    ins = -0.2 #same as delete cost
-    scores = [[0]*(o+1) for i in xrange(q+1)]
-    scores[0][0] = 0
+    m = len(ref)
+    n = len(query)
 
-    #default substitution score matrix
-    mat = [[0]*4 for i in range(4)]
-    for i in range(4): mat[i][i] = 1.0
-    mat[0][1] = mat[1][0] = -0.1
-    mat[0][2] = mat[2][0] = -0.1
-    mat[0][3] = mat[3][0] = -0.15
-    mat[1][2] = mat[2][1] = -0.15
-    mat[1][3] = mat[3][1] = -0.1
-    mat[2][3] = mat[3][2] = -0.1
-
-    #initiate score matrix worst-case scores
-    for i in range(1,q):
-        scores[i][0]= scores[i-1][0]+ins
-
-    for j in range(1,o):
-        scores[0][j]= scores[0][j-1]+ins
+    score = [[0]*(n+1) for i in xrange(m+1)]
+    bt = [[0]*(n+1) for i in xrange(m+1)]
+    gaps = [[0]*(n+1) for i in xrange(m+1)]
+    score[0][0] = 0
+    bt[0][0] = -1
 
     DELETION, INSERTION, MATCH = range(3)
-    #print "d", DELETION
-    #print "i", INSERTION
-    #print "m", MATCH
 
-    bt = [[0]*(o+1) for i in xrange(q+1)]
+    for i in range(1,m+1):
+        bt[i][0] = DELETION
+        score[i][0] = -.2
 
-    #fills score and backtrace matrices with values and paths respectively
-    for i in range(1,q):
-        for j in range(1,o):
-            deletion = (scores[i-1][j] -0.2, DELETION)
-            insertion = (scores[i][j-1] -0.2, INSERTION)
-            match = (scores[i-1][j-1]+mat[def_sub(query_str[i])][def_sub(other_str[j])], MATCH)
-            scores[i][j], bt[i][j] = max((0, 0), deletion, insertion, match)
+    gaps[0][1] = 1
+    for i in range(2,n+1):
+        gaps[0][i] = 1 + gaps[0][i-1]
+    gap_len = 0
+    for i in range(1,m+1):
+        for j in range(1,n+1):
+            if j > 1:
+                gap_len = gaps[i-1][j]
+            deletion = (score[i - 1][j] - gap_score(gap_len+1), DELETION)
+            gap_len = 0
+            if i > 1:
+                gap_len = gaps[i][j-1]
+            insertion = (score[i][j - 1] - gap_score(gap_len+1), INSERTION)
+            match = (score[i-1][j-1]+ sub_score(ref[i-1],query[j-1]), MATCH)
+            score[i][j], bt[i][j] = max(deletion, insertion, match)
+            if bt[i][j] == DELETION:
+                gaps[i][j] = gaps[i-1][j] + 1
+            elif bt[i][j] == INSERTION:
+                gaps[i][j] = gaps[i][j-1] + 1
+            else:
+                gaps[i][j] = 0
+    similarity_i = round(score[m][n-1],2)
+    similarity_d = round(score[m-1][n],2)
+    similarity_m = round(score[m][n],2)
+    if similarity_d > similarity_m:
+        if similarity_i > similarity_d:
+            bt1 = [[0]*(n) for i in xrange(m+1)]
+            for i in range(1,m+1):
+                for j in range(1,n):
+                    bt1[i][j] = bt[i][j]
+            bt = bt1
+            similarity = similarity_i
+        else:
+            bt1 = [[0]*(n+1) for i in xrange(m)]
+            for i in range(1,m):
+                for j in range(1,n+1):
+                    bt1[i][j] = bt[i][j]
+            bt = bt1
+            similarity = similarity_d
+            ref = ref[:m-1]
+    elif similarity_i > similarity_m:
+        bt1 = [[0]*(n) for i in xrange(m+1)]
+        for i in range(1,m+1):
+            for j in range(1,n):
+                bt1[i][j] = bt[i][j]
+        bt = bt1
+        similarity = similarity_i
+    else:
+        similarity = similarity_m
 
-    coord = q-1,o-1
-    q = int(q)
-    o = int(o)
-    similarity = round(scores[q-1][o-1],2)
-
-    #prints score and backtrace matrices, and similarity score before
-    #gaps are considered
-
-    #print('\n'.join([''.join(['{:6}'.format(round(item,2)) for item in row]) for row in scores]))
-    #print "before gap length changes score: ",similarity
+    #print('\n'.join([''.join(['{:6}'.format(round(item,2)) for item in row]) for row in score]))
     #print('\n'.join([''.join(['{:6}'.format(item) for item in row]) for row in bt]))
+    #print('\n'.join([''.join(['{:6}'.format(item) for item in row]) for row in gaps]))
+    #print ref, query
 
-    similarity,a,b = backtrace(similarity,query_str,other_str,bt,DELETION,INSERTION,MATCH)
-    #print "After gap length changes score: ",similarity
-    #print a
-    #print b
+    a,b = backtrace(ref,query,bt)
 
     return similarity, a, b
 
-"""
-default substitution method, using table from assignment specs,
-labeled mat in previous function
-"""
-def def_sub(ch):
-    str = "AGCT"
-    for i in range(0,4):
-        if (str[i] == ch):
-            return i
-    print "Unknown Character Found, Incorrect Results Imminent."
-    return -1
-"""
-backtrace method, uses default gap scoring as defined in assignment
-specifications, and sets alignment strings according to the backtrace
-matrix
-"""
-def backtrace(score,query_str,other_str,bt,DELETION,INSERTION,MATCH):
-    i = len(query_str)-1
-    j = len(other_str)-1
-    a = b = ''
-    gap_size = 0
-    while i>0 or j>0:
+def backtrace(ref,query,bt):
+    if len(ref) == 1 and len(query) == 1:
+        return ref,query
+
+    i = len(ref)-1
+    j = len(query)-1
+    a = b = ""
+
+    DELETION, INSERTION, MATCH = range(3)
+
+    while i >= 0 or j >= 0:
         if i < 0 or j < 0:
             break
         if bt[i][j] == MATCH:
-            if gap_size > 0:
-                score = score - def_gap(gap_size)
-            gap_size = 0
+            if len(a) >= 1 and a[len(a)-1] == '_':
+                a += ref[i+1]
+            if len(b) >= 1 and b[len(b)-1] == '_':
+                b += query[j+1]
+            a += ref[i]
+            b += query[j]
             i -= 1
             j -= 1
-            a = a+ query_str[i+1]
-            b = b+ other_str[j+1]
         elif bt[i][j] == INSERTION:
-            ++gap_size
+            if len(b) > 0 and b[len(b)-1] != '_' or len(b) == 0:
+                b += query[j]
+            b += '_'
             j -= 1
-            a = a+'_'
-            b = b+other_str[j+1]
         elif bt[i][j] == DELETION:
-            ++gap_size
+            if len(a) > 0 and a[len(a)-1] != '_' or len(a) == 0:
+                a += ref[i]
+            a += '_'
             i -= 1
-            a = a+query_str[i+1]
-            b = b+'_'
+        else:
+            if query[j] == ref[i]:
+                a += ref[0]
+                b += ref[0]
+            break
 
-    return score,a[::-1],b[::-1]
+    if j > 1: k = j+1
+    elif j == 1: k = 1+1
+    else: k = 0
+    a = a[::-1]
 
-def def_gap(gap_size):
-    if gap_size > 1:
-        return (gap_size-1)*.05
-    return 0
+    for j in reversed(xrange(0,k)):
+        b += query[j]
+        if len(b) < len(a):
+            a = a[1:]
+
+    while len(a) < len(b):
+        a = '_' + a
+    while len(a) > len(b):
+        a = a[:len(a)-2]
+    return a,b[::-1]
+
+#~ def sub(a,b):
+    #~ mat = [[0]*4 for i in range(4)]
+    #~ for i in range(4): mat[i][i] = 1.0
+    #~ mat[0][1] = mat[1][0] = -0.1
+    #~ mat[0][2] = mat[2][0] = -0.1
+    #~ mat[0][3] = mat[3][0] = -0.15
+    #~ mat[1][2] = mat[2][1] = -0.15
+    #~ mat[1][3] = mat[3][1] = -0.1
+    #~ mat[2][3] = mat[3][2] = -0.1
+#~
+    #~ str = "AGCT"
+    #~ for i in range(0,4):
+        #~ if (str[i] == a):
+            #~ ret = i
+            #~
+    #~ str = "AGCT"
+    #~ for i in range(0,4):
+        #~ if (str[i] == b):
+            #~ ret2 = i
+            #~
+    #~ return mat[ret][ret2]
+     #~
+#~ def gap(gap_len):
+    #~ if gap_len == 1:
+        #~ return .2
+    #~ return .05
+
