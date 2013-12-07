@@ -1,8 +1,10 @@
+RESET = "\033[0m"
+"""Control sequence to reset colors on terminal."""
+
 def _resolve_symbol(symbol, use_colors):
     if not use_colors:
         return symbol
 
-    RESET = "\033[0m"
     mapping = {
         "X": "\033[41m",
         "|": "\033[42m",
@@ -11,26 +13,35 @@ def _resolve_symbol(symbol, use_colors):
 
     return mapping[symbol] + " " + RESET
 
-def write_result(top_sequence, bottom_sequence, score, use_colors = True,
-        console_width = 72):
+def write_result(name, top_sequence, bottom_sequence, score, use_colors = True,
+        console_width = 72, show_alignment = True):
     """
     Writes a single result to standard output.
 
+    :param name: The name of the organism (which should have the genome
+        ``top_sequence``).
     :param top_sequence: A sequence that will be printed at the top.
-    :param other_organism: A sequence that will be printed at the bottom.
+    :param bottom_sequence: A sequence that will be printed at the bottom.
     :param score: A score value.
-    :param use_colors: If true, colored spaces will be used instead of symbols.
+    :param use_colors: If True, colored spaces will be used instead of symbols.
     :param console_width: The width to use when printing.
+    :param show_alignment: If False, the sequences won't be printed out and
+        only the score will be shown.
 
     :returns: ``None``
 
     """
 
-    # We'll print three rows and add green background between any matches, any
-    # gaps will have yellow, and any mismatches will have red coloring.
+    # Print the header
+    print "Organism:", name
+    print "Similarity Score:", score
 
-    # Print the score
-    print "---- score:", score, " ----"
+    if not show_alignment:
+        return None
+
+    # We're printing the alignment so make a blank space between the header and
+    # it.
+    print
 
     # Ensure that the sequences are the same size, add padding where necessary
     pad_sequence = lambda seq, width: seq + "_" * (width - len(seq))
@@ -70,5 +81,12 @@ def write_result(top_sequence, bottom_sequence, score, use_colors = True,
         if top_row:
             print
 
-# if __name__ == "__main__":
-#     write_result("ABCDGEXDF" * 50, "A__DEEC" * 50, 100, True)
+# Useful for quick testing and demoing
+if __name__ == "__main__":
+    import sys
+    # If the user passed in some command line arguments use those,
+    # otherwise just use some interesting defaults.
+    if len(sys.argv) > 1:
+        write_result(*[eval(i) for i in sys.argv[1:]])
+    else:
+        write_result("Turtle", "ABCDGEXDF" * 50, "A__DEEC" * 50, 100, True)
