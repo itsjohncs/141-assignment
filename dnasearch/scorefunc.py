@@ -20,16 +20,15 @@ def make_score_functions(score_file):
     ``score_definition`` will be inspected for ``matrix`` and ``gap_formula``
     values.
 
-    ``matrix`` should be a 5x5 matrix of numbers representing the substition
+    ``matrix`` should be a 4x4 matrix of numbers representing the substition
     penalties. The matrix should be ordered like the following...
 
     ```
-      A G C T _
-    A 0 1 2 3 4
-    G 1 0 5 6 7
-    C 2 5 0 8 9
-    T 3 6 8 0 1
-    _ 4 7 9 1 0
+    - A G C T
+    A 0 1 2 3
+    G 1 0 4 5
+    C 2 4 0 6
+    T 3 5 6 0
     ```
 
     Note however that the headers should not be present.
@@ -43,11 +42,10 @@ def make_score_functions(score_file):
     ```ini
     [score_definition]
     matrix =
-        0 1 2 3 4
-        1 0 5 6 7
-        2 5 0 8 9
-        3 6 8 0 1
-        4 7 9 1 0
+        0 1 2 3
+        1 0 4 5
+        2 4 0 6
+        3 5 6 0
     gap_formula = length * 2
     ```
 
@@ -72,13 +70,13 @@ def make_score_functions(score_file):
     matrix_raw = parser.get("score_definition", "matrix")
 
     # The symbols available in the order they appear in the matrix
-    symbols = ("A", "G", "C", "T", "_")
+    symbols = ("A", "G", "C", "T")
 
     # Create a two dimensional list to store the resulting matrix
     matrix = [list([0] * len(symbols)) for i in range(len(symbols))]
 
     # Extract just the numbers
-    NUMBER_RE = re.compile("[0-9]+\.?[0-9]*")
+    NUMBER_RE = re.compile("-?[0-9]+\.?[0-9]*")
     numbers = [float(i) for i in NUMBER_RE.findall(matrix_raw)]
     if len(numbers) != len(symbols) ** 2:
         raise RuntimeError("Not enough values in matrix.")
