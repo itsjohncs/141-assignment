@@ -11,7 +11,7 @@ matrix =
     -0.1 1.0 -0.15 -0.1
     -0.1 -0.15 1.0 -0.1
     -0.15 -0.1 -0.1 1.0
-gap_formula = 0.2 + 0.05 * (length - 1)
+gap_formula = (0.2 if length == 1 else 0.05)
 
 """
 
