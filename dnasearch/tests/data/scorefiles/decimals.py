@@ -1,7 +1,6 @@
 assert sub_score("A", "A") == 0
 assert sub_score("A", "C") == 2.2
 assert sub_score("C", "A") == 2.2
-assert sub_score("C", "A") == 2.2
 assert sub_score("C", "G") == 4.4
 
 # Because floating point division is imprecise...
