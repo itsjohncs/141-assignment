@@ -12,7 +12,7 @@ class PriorityQueue:
             self.value = value
 
         def __cmp__(self, other):
-            return int.__cmp__(-self.key, -other.key)
+            return cmp(self.key, other.key)
 
         def __hash__(self):
             return hash(self.key)
