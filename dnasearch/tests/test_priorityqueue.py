@@ -7,23 +7,25 @@ import random
 # Make a shorter name for ourselves
 PriorityQueue = priorityqueue.PriorityQueue
 
-SAMPLE_VALUES = [random.randrange(1000) for i in xrange(1000)]
+SAMPLE_VALUES = [
+    (random.randrange(1000), random.randrange(1000)) for i in xrange(1000)]
+SAMPLE_KEYVALUES = [PriorityQueue.KeyValuePair(i, j) for i, j in SAMPLE_VALUES]
 
 def test_push():
     """Ensures that items pushed into the queue are in the queue."""
 
     pq = PriorityQueue()
-    for i in SAMPLE_VALUES:
-        pq.push(i)
+    for i, j in SAMPLE_VALUES:
+        pq.push(i, j)
 
-    assert set(pq._heap) == set(SAMPLE_VALUES)
+    assert set(pq._heap) == set(SAMPLE_KEYVALUES)
 
 def test_construction():
     """Ensures that items given to the constructor are in the queue."""
 
     pq = PriorityQueue(SAMPLE_VALUES)
 
-    assert set(pq._heap) == set(SAMPLE_VALUES)
+    assert set(pq._heap) == set(SAMPLE_KEYVALUES)
 
 def test_length():
     pq = PriorityQueue(SAMPLE_VALUES)
@@ -35,7 +37,7 @@ def test_pop():
 
     pq = PriorityQueue(SAMPLE_VALUES)
 
-    sorted_sample_values = sorted(SAMPLE_VALUES)
+    sorted_sample_values = sorted(SAMPLE_KEYVALUES)
 
     queue_list = []
     while pq:
