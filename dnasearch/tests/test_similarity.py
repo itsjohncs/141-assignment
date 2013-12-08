@@ -1,21 +1,44 @@
+# internal
+from .. import scorefunc
 from .. import similarity
 
-#from pytest import *
+# external
+import pytest
 
-if similarity.score("AACCTGACATCTT", "CCAGCGTCAACTT", 1, 1) != (7.35, 'CCTGA__CATCTT', 'CCAGCGTCAACTT'):
-    print "Failed Test: 1"
+TEST_CASES = [
+    (
+        ("AACCTGACATCTT", "CCAGCGTCAACTT"),
+        (7.35, "CCTGA__CATCTT", "CCAGCGTCAACTT")
+    ),
+    (
+        ("CCAGCGTCAACTT", "AACCTGACATCTT"),
+        (7.35, "AG__CGTCAACTT", "AACCTGACATCTT")
+    ),
+    (
+        ("AAACCCGGGTTT", "AAACCCGGGTTT"),
+        (12.00, "AAACCCGGGTTT", "AAACCCGGGTTT")
+    ),
+    (
+        ("ACGT", "CATG"),
+        (1.9, "_ACG", "CATG")
+    ),
+    (
+        ("A","A"),
+        (1, "A", "A")
+    ),
+    (
+        ("CATG", "ACGT"),
+        (1.9, "_CAT", "ACGT")
+    )
+]
 
-if similarity.score("CCAGCGTCAACTT", "AACCTGACATCTT", 1, 1) != (7.35, 'AG__CGTCAACTT', 'AACCTGACATCTT'):
-    print "Failed Test: 2"
+@pytest.mark.parametrize("test_case", TEST_CASES)
+def test_similarity(test_case):
+    arguments, expected_result = test_case
 
-if similarity.score("AAACCCGGGTTT", "AAACCCGGGTTT", 1, 1) != (12.00, 'AAACCCGGGTTT', 'AAACCCGGGTTT'):
-    print "Failed Test: 3"
+    # Use the default substition and gap scores
+    sub_score, gap_score = scorefunc.make_score_functions(None)
 
-if similarity.score("ACGT", "CATG", 1, 1) != (1.9, '_ACG', 'CATG'):
-    print "Failed Test: 4"
-
-if similarity.score('A','A',1,1)!=(1,'A','A'):
-    print "Failed Test: 5"
-
-if similarity.score("CATG", "ACGT", 1, 1) != (1.9,'_CAT', 'ACGT'):
-    print "Failed Test: 6"
+    actual_result = similarity.score(
+        *arguments, sub_score = sub_score, gap_score = gap_score)
+    assert actual_result == expected_result
