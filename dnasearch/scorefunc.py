@@ -1,6 +1,19 @@
 # stdlib
 import ConfigParser
 import re
+import StringIO
+
+DEFAULT_SCORE_INI = \
+"""
+[score_definition]
+matrix =
+    1.0 -0.1 -0.1 -0.15
+    -0.1 1.0 -0.15 -0.1
+    -0.1 -0.15 1.0 -0.1
+    -0.15 -0.1 -0.1 1.0
+gap_formula = 0.2 + 0.05 * (length - 1)
+
+"""
 
 def make_score_functions(score_file):
     """
@@ -50,11 +63,15 @@ def make_score_functions(score_file):
     ```
 
     :param score_file: A file-like object containing the file that defines
-            scoring functions.
+        scoring functions. If ``None`` a default score file will be used that
+        uses the matrix and gap penalty described in the spec.
 
     :returns: A two-tuple ``(sub_score, gap_score)``. See above for details.
 
     """
+
+    if score_file is None:
+        score_file = StringIO.StringIO(DEFAULT_SCORE_INI)
 
     parser = ConfigParser.SafeConfigParser()
     parser.readfp(score_file)

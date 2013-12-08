@@ -24,3 +24,10 @@ def test_sample_files(sample):
     pyfile_path = sample[:-4] + ".py" # cuts off the .txt and adds .py
     exec open(pyfile_path, "r")
 
+def test_default():
+    sub_score, gap_score = scorefunc.make_score_functions(None)
+
+    pyfile_path = os.path.join(
+        data.get_directory(), "scorefiles", "default.py")
+    exec open(pyfile_path, "r")
+
