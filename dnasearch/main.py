@@ -76,6 +76,9 @@ def parse_arguments(args = sys.argv[1:]):
     if len(args) != 2:
         parser.error("Both a DATABASE_FILE and a QUERY_FILE must be supplied.")
 
+    if int(options.num_results) < 1:
+        parser.error("num-results must be greater than or equal to 1.")
+
     return (options, args)
 
 def setup_logging(options, args):
