@@ -133,8 +133,7 @@ def main(args = sys.argv[1:]):
     for i, organism in enumerate(db):
         # Figure out this organism's score
         score, query_alignment, reference_alignment = \
-            similarity.score(query_sequence, organism.sequence, sub_score,
-                gap_score)
+            similarity.score(query_sequence, organism.sequence)
 
         log.debug("Organism '%s' has score %s.", organism.description, score)
 
