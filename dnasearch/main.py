@@ -145,7 +145,7 @@ def main(args = sys.argv[1:]):
 
                 # Figure out this organism's score
                 result = similarity.score(organism.sequence, query_sequence,
-                    chunk_size = options.chunk_size)
+                    chunk_size = int(options.chunk_size))
                 log.debug("Organism '%s' has score %s.", organism.description,
                     result[0])
 
