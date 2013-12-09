@@ -1,5 +1,4 @@
 # internal
-from .. import scorefunc
 from .. import similarity
 
 # external
@@ -8,11 +7,11 @@ import pytest
 TEST_CASES = [
     (
         ("AACCTGACATCTT", "CCAGCGTCAACTT"),
-        (7.35, "CCTGA__CATCTT", "CCAGCGTCAACTT")
+        (7.35, "CC__TGACATCTT", "CCAGCGTCAACTT")
     ),
     (
         ("CCAGCGTCAACTT", "AACCTGACATCTT"),
-        (7.35, "AG__CGTCAACTT", "AACCTGACATCTT")
+        (7.35, "CCAGCGTCAACTT", "CC__TGACATCTT")
     ),
     (
         ("AAACCCGGGTTT", "AAACCCGGGTTT"),
@@ -20,7 +19,7 @@ TEST_CASES = [
     ),
     (
         ("ACGT", "CATG"),
-        (1.9, "_ACG", "CATG")
+        (1.9, "ACG", "ATG")
     ),
     (
         ("A","A"),
@@ -28,7 +27,7 @@ TEST_CASES = [
     ),
     (
         ("CATG", "ACGT"),
-        (1.9, "_CAT", "ACGT")
+        (1.9, "CAT", "CGT")
     )
 ]
 
@@ -36,9 +35,9 @@ TEST_CASES = [
 def test_similarity(test_case):
     arguments, expected_result = test_case
 
-    # Use the default substition and gap scores
-    sub_score, gap_score = scorefunc.make_score_functions(None)
+    actual_result = similarity.score(*arguments)
 
-    actual_result = similarity.score(
-        *arguments, sub_score = sub_score, gap_score = gap_score)
+    print actual_result[1]
+    print actual_result[2]
+
     assert actual_result == expected_result

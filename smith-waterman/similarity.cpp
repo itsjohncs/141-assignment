@@ -12,7 +12,6 @@ unsigned symbol_to_index(char symbol) {
         case 'C': return 2;
         case 'T': return 3;
         default:
-            std::cerr << "Symbol: " << static_cast<int>(symbol) << std::endl;
             throw std::runtime_error("Invalid symbol.");
     }
 }
@@ -136,6 +135,7 @@ void similarity_score(std::string const & a, std::string const & b,
     // Move through the matrix backwards and determine our path (the blue
     // arrows in the wikipedia article are visualizing this step)
     std::vector<Point> path;
+    path.reserve(b.size() * 2);
     Point cur_point = largest_cell;
     while (matrix.action_at(cur_point.x, cur_point.y) != NONE) {
         path.push_back(cur_point);
