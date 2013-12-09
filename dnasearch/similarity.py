@@ -1,12 +1,54 @@
 # stdlib
 import collections
+import array
 
 # Create an enumeration to keep track of what we're doing
-MATCH, DELETION, INSERTION = range(3)
+NONE, MATCH, DELETION, INSERTION = range(4)
 
 # The score is H(i, j) (per wikipedia's description of the algorithm) along
 # with one action being one of None, MATCH, DELETION, or INSERTION.
 SmithCell = collections.namedtuple("SmithCell", ["score", "action"])
+
+class SmithMatrix:
+    """
+    A very memory-tight matrix for use with the similarity algorithm.
+
+    """
+
+    __slots__ = ("width", "height", "_scores", "_actions")
+
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+
+        self._scores = array.array("i", (0 for i in xrange(width * height)))
+        self._actions = array.array("c", (chr(0) for i in xrange(width * height)))
+
+    def get_score(self, i, j):
+        return self._scores[j * self.width + i] / 100.0
+
+    def set_score(self, i, j, score):
+        self._scores[j * self.width + i] = int(score * 100.0 + 0.5)
+
+    def get_action(self, i, j):
+        return ord(self._actions[j * self.width + i])
+
+    def set_action(self, i, j, action):
+        self._actions[j * self.width + i] = chr(action)
+
+    def set(self, i, j, score, action):
+        self.set_score(i, j, score)
+        self.set_action(i, j, action)
+
+    def get(self, i, j):
+        return get_score(i, j), get_score(i, j)
+
+_FIND_DIRECTION_LOOKUP_TABLE = {
+    None: (0, 0),
+    MATCH: (-1, -1),
+    DELETION: (-1, 0),
+    INSERTION: (0, -1)
+}
 
 def _find_direction(action):
     """
@@ -15,14 +57,7 @@ def _find_direction(action):
 
     """
 
-    lookup_table = {
-        None: (0, 0),
-        MATCH: (-1, -1),
-        DELETION: (-1, 0),
-        INSERTION: (0, -1)
-    }
-
-    return lookup_table[action]
+    return _FIND_DIRECTION_LOOKUP_TABLE[action]
 
 def _find_gap_length(matrix, i, j):
     """
@@ -30,13 +65,13 @@ def _find_gap_length(matrix, i, j):
 
     """
 
-    start_action = matrix[i][j].action
+    start_action = matrix.get_action(i, j)
     if start_action not in (DELETION, INSERTION):
         return 0
 
     result = 0
-    while matrix[i][j].action == start_action:
-        di, dj = _find_direction(matrix[i][j].action)
+    while matrix.get_action(i, j) == start_action:
+        di, dj = _find_direction(matrix.get_action(i, j))
         i += di
         j += dj
 
@@ -103,13 +138,13 @@ def score(a, b, sub_score, gap_score):
     b = b.strip()
 
     # Create our matrix (len(a) + 1) x (len(b) + 1).
-    matrix = [[None] * (len(b) + 1) for i in xrange(len(a) + 1)]
+    matrix = SmithMatrix(len(a) + 1, len(b) + 1)
 
     # Zero our left and top borders
     for i in xrange(len(a) + 1):
-        matrix[i][0] = SmithCell(0, None)
+        matrix.set(i, 0, 0, NONE)
     for i in xrange(len(b) + 1):
-        matrix[0][i] = SmithCell(0, None)
+        matrix.set(0, i, 0, NONE)
 
     # As we build the matrix we're going to keep track of what the largest
     # value is
@@ -119,42 +154,45 @@ def score(a, b, sub_score, gap_score):
     # Make sure to skip the zeroed borders
     for i in xrange(1, len(a) + 1):
         for j in xrange(1, len(b) + 1):
-            if a[i-1] not in ("A", "G", "C", "T"):
-                print a[i-1]
-            if b[i-1] not in ("A", "G", "C", "T"):
-                print b[i-1]
+            if a[i - 1] not in ("A", "G", "C", "T"):
+                raise ValueError("Bad character '%s' in a", a[i - 1])
+
+            if b[j - 1] not in ("A", "G", "C", "T"):
+                raise ValueError("Bad character '%s' in b", b[j - 1])
+
             # The score if we leave things be and match up these two symbols.
             # Note that when accessing the original strings we have to be
             # careful since we added zeroed borders
-            match_score = (matrix[i - 1][j - 1].score +
+            match_score = (matrix.get_score(i - 1, j - 1) +
                 sub_score(a[i - 1], b[j - 1]))
 
             # The score if we add a gap to b here (deletion)
-            deletion_score = (matrix[i - 1][j].score -
+            deletion_score = (matrix.get_score(i - 1, j) -
                 gap_score(1 + _find_gap_length(matrix, i - 1, j)))
 
             # The score if we add a gap to a here (insertion)
-            insertion_score = (matrix[i][j - 1].score -
+            insertion_score = (matrix.get_score(i, j - 1) -
                 gap_score(1 + _find_gap_length(matrix, i, j - 1)))
 
             max_score = max(
-                (0, None),
+                (0, NONE),
                 (match_score, MATCH),
                 (deletion_score, DELETION),
                 (insertion_score, INSERTION))
-            matrix[i][j] = SmithCell(*max_score)
+            matrix.set(i, j, *max_score)
 
-            if largest_cell is None or largest_cell[0] < matrix[i][j].score:
-                largest_cell = (matrix[i][j].score, (i, j))
+            if largest_cell is None or largest_cell[0] < \
+                    matrix.get_score(i, j):
+                largest_cell = (matrix.get_score(i, j), (i, j))
 
     # Move through the matrix backwards and determine our path (the blue
     # arrows in the wikipedia article is visualizing this step)
     path = []
     i, j = largest_cell[1]
-    while matrix[i][j].action is not None:
+    while matrix.get_action(i, j) != NONE:
         path.append((i, j))
 
-        di, dj = _find_direction(matrix[i][j].action)
+        di, dj = _find_direction(matrix.get_action(i, j))
         i += di
         j += dj
 
@@ -166,19 +204,18 @@ def score(a, b, sub_score, gap_score):
         # Unpack the coordinates in the path
         i, j = i_j
 
-        # Grab the cell at (i, j) so our code below can be more succint
-        cell = matrix[i][j]
+        cell_action = matrix.get_action(i, j)
 
         # Contruct the two alignments per wikipedia's description. Figuring
         # out which string to add a gap to after an INSERTION vs DELETION was
         # figured out through trying both. Hard to keep it all in my head.
-        if cell.action == MATCH:
+        if cell_action == MATCH:
             aligned_a.append(a[i - 1])
             aligned_b.append(b[j - 1])
-        elif cell.action == INSERTION:
+        elif cell_action == INSERTION:
             aligned_a.append("_")
             aligned_b.append(b[j - 1])
-        elif cell.action == DELETION:
+        elif cell_action == DELETION:
             aligned_a.append(a[i - 1])
             aligned_b.append("_")
 
@@ -226,9 +263,10 @@ if __name__ == "__main__":
     import dnasearch.scorefunc as scorefunc
     sub_score, gap_score = scorefunc.make_score_functions(None)
 
-    print calculate_similarity("ACACACTA", "AGCACACA", sub_score, gap_score)
-    print calculate_similarity("CGAC", "AGCACAC", sub_score, gap_score)
-    print calculate_similarity("AGCACAC", "CGAC", sub_score, gap_score)
-    print calculate_similarity("AACCTGACATCTT", "CCAGCGTCAACTT", sub_score, gap_score)
-    print calculate_similarity("AAACCCGGGTTT", "AAACCCGGGTTT", sub_score, gap_score)
-    print calculate_similarity("ACGT", "CATG", sub_score, gap_score)
+    print score("ACACACTA", "AGCACACA", sub_score, gap_score)
+    print score("CGAC", "AGCACAC", sub_score, gap_score)
+    print score("AGCACAC", "CGAC", sub_score, gap_score)
+    print score("AACCTGACATCTT", "CCAGCGTCAACTT", sub_score, gap_score)
+    print score("AAACCCGGGTTT", "AAACCCGGGTTT", sub_score, gap_score)
+    print score("ACGT", "CATG", sub_score, gap_score)
+    print score("ACGTT", "CATGCCCG", sub_score, gap_score)
