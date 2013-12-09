@@ -39,7 +39,15 @@ def parse_arguments(args = sys.argv[1:]):
         ),
         make_option(
             "-j", "--num-jobs", nargs = 1, default = 3,
-            help = "The number of organisms to process concurrently."
+            help =
+                "The number of organisms to process concurrently. Default: "
+                "%default"
+        ),
+        make_option(
+            "--chunk-size", nargs = 1, default = 200000,
+            help =
+                "The chunk size to use when processing large organisms. "
+                "Default: %default"
         ),
         make_option(
             "-v", "--verbose", action = "count", default = 0,
@@ -136,7 +144,8 @@ def main(args = sys.argv[1:]):
                     return
 
                 # Figure out this organism's score
-                result = similarity.score(query_sequence, organism.sequence)
+                result = similarity.score(organism.sequence, query_sequence,
+                    chunk_size = options.chunk_size)
                 log.debug("Organism '%s' has score %s.", organism.description,
                     result[0])
 
