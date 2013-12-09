@@ -48,3 +48,6 @@ docs/_build/
 
 # Virtual Environments
 venv*/
+
+# CPP Binaries
+*.out
