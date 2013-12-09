@@ -54,10 +54,10 @@ def write_result(name, top_sequence, bottom_sequence, score, use_colors = True,
     middle_row = [" "] * max_width
     for i, top, bottom in zip(
             xrange(max_width), top_sequence, bottom_sequence):
-        if top == bottom:
-            middle_row[i] = "|"
-        elif top == "_" or bottom == "_":
+        if top == "_" or bottom == "_":
             middle_row[i] = " "
+        elif top == bottom:
+            middle_row[i] = "|"
         else:
             middle_row[i] = "X"
 
