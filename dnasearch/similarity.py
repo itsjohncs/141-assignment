@@ -41,7 +41,7 @@ class SmithMatrix:
         self.set_action(i, j, action)
 
     def get(self, i, j):
-        return get_score(i, j), get_score(i, j)
+        return get_score(i, j), get_action(i, j)
 
 _FIND_DIRECTION_LOOKUP_TABLE = {
     None: (0, 0),
@@ -232,25 +232,6 @@ def score(a, b, sub_score, gap_score):
     end = -gaps_right if gaps_right != 0 else None
     aligned_a = aligned_a[gaps_left:end]
     aligned_b = aligned_b[gaps_left:end]
-
-    # For simplicity, we calculate the final score here rather than
-    # incrementally above which seems to be theoretically possible.
-    gap_length = 0
-    gap_owner = None
-    final_score = 0
-    for i, j in zip(aligned_a, aligned_b):
-        assert not (i == "_" and j == "_")
-
-        if i != "_" and j != "_":
-            final_score += sub_score(i, j)
-
-            gap_length = 0
-            gap_owner = None
-        elif i == "_" or j == "_":
-            gap_in_a = i == "_"
-
-            if gap_owner == "a":
-                gap_length += 1
 
     aligned_a = "".join(aligned_a)
     aligned_b = "".join(aligned_b)
