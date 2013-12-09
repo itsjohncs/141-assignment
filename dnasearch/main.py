@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
 # stdlib
+import time
 import sys
+import Queue
+import threading
 import optparse
 import subprocess
 
 # internal
-from . import scorefunc
 from . import output
 from . import similarity
 from . import database
@@ -36,10 +38,8 @@ def parse_arguments(args = sys.argv[1:]):
                 "printing the alignment."
         ),
         make_option(
-            "--score-file", default = None,
-            help =
-                "The file to generate the subsitution matrix and gap penalty "
-                "function with."
+            "-j", "--num-jobs", nargs = 1, default = 3,
+            help = "The number of organisms to process concurrently."
         ),
         make_option(
             "-v", "--verbose", action = "count", default = 0,
@@ -109,13 +109,6 @@ def main(args = sys.argv[1:]):
         log.exception("Could not load query file.")
         return 2
 
-    # Load the score file
-    if options.score_file is None:
-        sub_score, gap_score = scorefunc.make_score_functions(None)
-    else:
-        with open(options.score_file, "r") as f:
-            sub_score, gap_score = scorefunc.make_score_functions(f)
-
     # Read the entire query file into memory
     with query_file as f:
         query_sequence = f.read()
@@ -126,16 +119,40 @@ def main(args = sys.argv[1:]):
     # to pass directly to the output.write_result function.
     pq = priorityqueue.PriorityQueue()
 
-    # Go through every item in the database and create a similarity score for
-    # each. Note I don't want to close the database after this call returns
-    # because it's a generator.
-    db = database.load_database(database_file)
-    for i, organism in enumerate(db):
-        # Figure out this organism's score
-        score, query_alignment, reference_alignment = \
-            similarity.score(query_sequence, organism.sequence)
+    # The thread-safe queue the workers will pull their jobs from
+    job_queue = Queue.Queue(maxsize = 1)
 
-        log.debug("Organism '%s' has score %s.", organism.description, score)
+    # The thread-safe queue the workers will put their results into
+    results_queue = Queue.Queue()
+
+    def worker_main():
+        """The main function of each worker thread."""
+
+        try:
+            while True:
+                organism = job_queue.get()
+                if organism is None:
+                    job_queue.task_done()
+                    return
+
+                # Figure out this organism's score
+                result = similarity.score(query_sequence, organism.sequence)
+                log.debug("Organism '%s' has score %s.", organism.description,
+                    result[0])
+
+                if options.print_alignment:
+                    results_queue.put((organism, result))
+                else:
+                    results_queue.put((organism, (result[0], None, None)))
+                job_queue.task_done()
+        except:
+            log.debug("Shutting down prematurely.")
+            raise
+
+    def add_result(organism, result):
+        """Adds a result to the priority queue. Not thread safe."""
+
+        score, reference_alignment, query_alignment = result
 
         if len(pq) < int(options.num_results):
             pq.push(score, (organism.description, reference_alignment,
@@ -144,6 +161,45 @@ def main(args = sys.argv[1:]):
             pq.pop()
             pq.push(score, (organism.description, reference_alignment,
                 query_alignment, score))
+
+    # Start up the threads
+    workers = [threading.Thread(target = worker_main) for i in
+        xrange(int(options.num_jobs))]
+    for i in workers:
+        i.daemon = True
+        i.start()
+
+    # We're going to keep adding jobs to the job queue until we run out of jobs
+    # after which we'll wait for all the results to come in and then carry on.
+    db = iter(database.load_database(database_file))
+    while True:
+        try:
+            cur_organism = next(db)
+        except StopIteration:
+            break
+
+        while True:
+            try:
+                job_queue.put(cur_organism, timeout = 1)
+                break
+            except Queue.Full:
+                pass
+
+        try:
+            while not results_queue.empty():
+                add_result(*results_queue.get(block = False))
+        except Queue.Empty:
+            pass
+
+    # Shut down all the workers
+    for i in xrange(len(workers)):
+        job_queue.put(None)
+    while [i for i in workers if i.is_alive()]:
+        time.sleep(1)
+
+    # Grab all the results
+    while not results_queue.empty():
+        add_result(*results_queue.get(block = False))
 
     # The priority queue will return the list of organisms in ascending order,
     # we want to reverse this.
